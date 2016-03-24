@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+        <script type="text/javascript">
+				var recvBufArray= new Array();
+var byteArray;
+            $(function() {
+                window.WebSocket = window.WebSocket || window.MozWebSocket;
+
+                var websocket = new WebSocket('ws://192.168.0.188:9000', // <---- 요기 수정
+                    'dumb-increment-protocol');
+
+                websocket.onopen = function () {
+                    $('h1').css('color', 'green');
+                };
+
+                websocket.onerror = function () {
+                    $('h1').css('color', 'red');
+                };
+
+                websocket.onmessage = function (message) {
+                   // $('div').append($('<p>', { text: 'received'}));
+                    //console.log(message.data);
+                    //console.log(message.data);
+					var reader = new FileReader();
+					reader.onload = function() {
+					//$('div').append($('<p>', { text: 'loaded'}));
+				//arrayBuffer = this.result;
+				    // var array5 =  new Uint8Array(this.result);
+					  //for(var i=0;i<array5.length ;i++)
+					//$('div').append($('<p>', { text: array5[i]}));
+					 
+					recvBufArray =recvBufArray.concat(Array.prototype.slice.call(new Uint8Array(this.result))); 
+					};
+					
+					reader.readAsArrayBuffer(message.data);
+                };
+
+
+                $('button').click(function(e) {
+                    e.preventDefault();
+                    websocket.send($('input').val());
+                    $('input').val('');
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <h1>WebSockets test</h1>
+        <form>
+            <input type="text" />
+            <button>Send</button>
+        </form>
+        <div>  	<canvas id="mycanvas" width=1024 height=600></canvas>
+</div>
+		<script src="processing.js"></script>
+	<script type="text/processing" data-processing-target="mycanvas">
+	
+	int Xmax = 1024;
+	int Ymax = 256;
+	int Yref = Ymax/2;
+	int q = 256;
+	void setup()
+	{	
+	  int i; 
+	int index = 0;
+	byte lower = 0;
+	char upper=0;
+	int bufSize = 0;
+	  frameRate(50);
+	  size(1024,600);
+	  background(125);
+	 // fill(255);
+	  //noLoop();
+	 // PFont fontA = loadFont("courier");
+	 // textFont(fontA, 14);  
+	}
+
+	void draw(){  
+	int j = 0;
+	char pointX1 = 0;
+	char pointX2 = 0;
+	
+	int tempindex = 0;
+	
+	int xArixIndex = 0;
+	upper = 0;
+
+	 //println("recvBufArray size :"+recvBufArray.length);
+
+	if(recvBufArray != null)
+	{
+		 if(recvBufArray.length> Xmax*2)
+		 {
+			if(recvBufArray.length > Xmax*2*100)
+			{
+				recvBufArray = recvBufArray.splice(recvBufArray.length - Xmax*2*50, 50);
+				tempbuf	  = recvBufArray.splice(0, Xmax*2);			
+			}
+			else
+				tempbuf	  = recvBufArray.splice(0, Xmax*2);
+			background(125);
+		  	stroke(255);
+		
+		  	j = Xmax;
+		  	index = 0;
+/*
+		  	while(j > 0  )
+		  	{
+				lower = (parseInt(tempbuf[index]));
+				upper = byte(parseInt(tempbuf[index+1]))*256;
+
+				upper += lower;
+				pointX1= upper;
+
+				lower = (parseInt(tempbuf[index+2]));
+				upper = byte(parseInt(tempbuf[index+3]))*256;
+
+				upper += lower;
+				pointX2= upper;
+
+
+				line(j,pointX1/10+300,j-1,pointX2/10+300);
+				j --;
+				index +=2;
+			}
+	*/		
+
+		  	while(j > 0  )
+		  	{
+				lower = (parseInt(recvBufArray[index]));
+				upper = byte(parseInt(recvBufArray[index+1]))*256;
+
+				upper += lower;
+				pointX1= upper;
+
+				lower = (parseInt(recvBufArray[index+2]));
+				upper = byte(parseInt(recvBufArray[index+3]))*256;
+
+				upper += lower;
+				pointX2= upper;
+
+
+				line(j,pointX2/20+300,j+1,pointX1/20+300);
+				j --;
+				index +=2;
+			}
+
+			//println(tempbuf);
+
+	
+		  }
+	}
+	else
+	 println("recvBufArray is null");
+	//if(i > 0)
+	//println("testdata"+list.get(i-1));
+	
+	}
+	</script>
+    </body>
+</html>

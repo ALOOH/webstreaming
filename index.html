@@ -1,0 +1,181 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Socket.IO chat</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font: 13px Helvetica, Arial; }
+      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+      form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
+      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+      #messages { list-style-type: none; margin: 0; padding: 0; }
+      #messages li { padding: 5px 10px; }
+      #messages li:nth-child(odd) { background: #eee; }
+    </style>
+  </head>
+  <body>
+   <h1>WebSockets test</h1>
+  	<div class ="field">
+  	<input type = "button" value="Start" onclick="connectWebSocket();"/>
+  	</div>
+  	<canvas id="mycanvas" width=1024 height=600></canvas>
+    <ul id="messages"></ul>
+    	<script type="text/javascript">
+            $(function() {
+                window.WebSocket = window.WebSocket || window.MozWebSocket;
+
+                var websocket = new WebSocket('ws://192.168.0.188:9000', // <---- 요기 수정
+                    'dumb-increment-protocol');
+
+                websocket.onopen = function () {
+                    $('h1').css('color', 'green');
+                };
+
+                websocket.onerror = function () {
+                    $('h1').css('color', 'red');
+                };
+
+                websocket.onmessage = function (message) {
+                    console.log(message.data);
+                    $('div').append($('<p>', { text: "recv" }));
+                };
+    	</script>
+	<script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
+	<script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+	<script>
+	/*
+		var recvBufArray= new Array();
+		var tempbuf;
+		//var oddBuf = null;
+		var jUpper;
+		var jLower;
+		var data=[];
+		var testdata = [];
+		var data2=[];
+		var totalBuffer; // = new Array();
+		//ArrayList list = new ArrayList();
+		var strArray;
+		//var data = new Buffer(1024);
+		//var i16 = new Int16Array(data);  
+		var dv;
+				var bufferIndex = 0;
+		var index = 0;
+		/*
+	  var socket = io();
+	  $('form').submit(function(){
+		socket.emit('chat message', $('#m').val());
+		$('#m').val('');
+		return false;
+	  });
+	  socket.on('chat message', function(msg){
+
+		recvBufArray = recvBufArray.concat(msg);
+
+				
+	  });
+	  */
+*/
+
+	</script>
+	<script src="processing.js"></script>
+	<script type="text/processing" data-processing-target="mycanvas">
+	
+	int Xmax = 1024;
+	int Ymax = 256;
+	int Yref = Ymax/2;
+	int q = 256;
+	void setup()
+	{
+	  int i; 
+	int index = 0;
+		char lower = 0;
+	char upper=0;
+	int bufSize = 0;
+	  frameRate(40);
+	  size(1024,600);
+	  background(125);
+	 // fill(255);
+	  //noLoop();
+	 // PFont fontA = loadFont("courier");
+	 // textFont(fontA, 14);  
+	}
+
+	void draw(){  
+	int j = 0;
+	char pointX1 = 0;
+	char pointX2 = 0;
+	
+	int tempindex = 0;
+	
+	int xArixIndex = 0;
+	upper = 0;
+
+	// println("recvBufArray size :"+recvBufArray);
+
+	if(recvBufArray != null)
+	{
+		 if(recvBufArray.length> Xmax*2)
+		 {
+			tempbuf	  = recvBufArray.splice(0, Xmax*2);
+			background(125);
+		  	stroke(255);
+		
+		  	j = Xmax-1;
+		  	index = 0;
+/*
+		  	while(j > 0  )
+		  	{
+				lower = (parseInt(tempbuf[index]));
+				upper = byte(parseInt(tempbuf[index+1]))*256;
+
+				upper += lower;
+				pointX1= upper;
+
+				lower = (parseInt(tempbuf[index+2]));
+				upper = byte(parseInt(tempbuf[index+3]))*256;
+
+				upper += lower;
+				pointX2= upper;
+
+
+				line(j,pointX1/10+300,j-1,pointX2/10+300);
+				j --;
+				index +=2;
+			}
+	*/		
+
+		  	while(j > 0  )
+		  	{
+				lower = ((tempbuf[index]));
+				upper = byte((tempbuf[index+1]))*256;
+
+				upper += lower;
+				pointX1= upper;
+
+				lower = ((tempbuf[index+2]));
+				upper = byte((tempbuf[index+3]))*256;
+
+				upper += lower;
+				pointX2= upper;
+
+
+				line(j,pointX1/10+300,j-1,pointX2/10+300);
+				j --;
+				index +=2;
+			}
+
+
+
+	
+		  }
+	}
+	else
+	 println("recvBufArray is null");
+	//if(i > 0)
+	//println("testdata"+list.get(i-1));
+	
+	}
+	</script>
+
+  </body>
+</html>

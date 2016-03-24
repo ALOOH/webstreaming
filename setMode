@@ -1,0 +1,52 @@
+#!/bin/sh
+
+run=0
+
+case "$1" in
+
+'AD1')
+ device=/dev/spidev0.2 
+;;
+
+'AD2')
+ device=/dev/spidev0.3
+;;
+
+'AD3')
+ device=/dev/spidev0.4
+;;
+
+'AD4')
+ device=/dev/spidev0.5
+;;
+
+*)
+ echo "usage:$0 {AD1|AD2|AD3|AD4} {mode} "
+ exit 0 
+esac
+
+if [ -z $2 ]; then
+ echo "usage:$0 {AD1|AD2|AD3|AD4} {mode} "
+ exit 0
+else
+ res=$(./ADStreamServer -D $device -M $2 -s 12000000)
+ echo " $1 $res "
+fi
+
+cmd=$(echo $res | awk '{print $2}')
+
+if [ "Not" = $cmd ]; 
+then 
+ exit 0
+fi 
+
+res=$($APATH/readReg $1 99)
+
+if [ $res -eq $2 ]; then 
+ echo " Successed! "
+else 
+ echo " Failed! re-try. "
+fi
+
+ 
+

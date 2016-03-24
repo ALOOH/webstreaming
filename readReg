@@ -1,0 +1,41 @@
+#!/bin/sh
+
+run=0
+
+case "$1" in
+
+'AD1')
+ device=/dev/spidev0.2 
+ run=1 
+;;
+
+'AD2')
+ device=/dev/spidev0.3
+ run=1
+;;
+
+'AD3')
+ device=/dev/spidev0.4
+ run=1
+;;
+
+'AD4')
+ device=/dev/spidev0.5
+ run=1
+;;
+
+*)
+ echo "usage:$0 {AD1|AD2|AD3|AD4} {reg}"
+ exit 0  
+esac
+
+if [ '1' -eq $run ]; then
+
+if [ -z $2 ]; then
+ ./ADStreamServer -D $device -R -s 12000000
+else
+ ./ADStreamServer -D $device -R -n $2 -s 12000000
+fi
+
+fi
+

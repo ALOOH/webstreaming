@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+        <script type="text/javascript">
+				var recvBufArray= new Array();
+const MOVE2UP = 0;
+const MOVE2DOWN = 1;
+const MOVE2RIGHT = 2;
+const MOVE2LEFT = 3;
+const ZOOMIN_V = 0;
+const ZOOMOUT_V = 1;
+const ZOOMIN_H = 2;
+const ZOOMOUT_H = 3;
+
+var byteArray;
+var websocket;
+var clickedStop = 1;
+var isFFT = 0;
+var num = 0;
+var frameRateTest = 0;
+var min=0;
+var max=0;
+var moveOffset_V = 0;
+var moveOffset_H = 0;
+var zoomOffset_V = 100;
+var zoomOffset_H = 1 ;
+var moveLimit = 0;
+function onReset(_offset)
+			{
+			moveOffset_V = 0;
+moveOffset_H = 0;
+zoomOffset_V = 100;
+zoomOffset_H = 1 ;
+			}
+			function onZoom(_offset)
+			{
+				
+				switch(_offset)
+				{
+					case ZOOMIN_V:
+					//if(zoomOffset_V >= 1)
+							//zoomOffset_V *=2;
+						//else
+						if(zoomOffset_V < 10)
+							zoomOffset_V =zoomOffset_V+1;
+						else
+							zoomOffset_V =zoomOffset_V+10;
+							
+						//zoomOffset_V = zoomOffset_V.toFixed(2);
+							//console.log(zoomOffset_V);
+					break;
+					
+					case ZOOMOUT_V:
+						//						if(zoomOffset_V > 1)
+						//{
+						//	if(zoomOffset_V == 2)
+						//		zoomOffset_V /=2;
+						//	else
+						//		zoomOffset_V -=2;
+						//}
+						if(zoomOffset_V > 10)
+							zoomOffset_V =zoomOffset_V - 10;
+						else if(zoomOffset_V <= 10 && zoomOffset_V > 2)
+							zoomOffset_V = zoomOffset_V -2;
+						
+						
+							console.log(zoomOffset_V);
+					break;
+					
+					case ZOOMIN_H:
+					if(zoomOffset_H > 1)
+						zoomOffset_H /=2;
+					break;
+					
+					case ZOOMOUT_H:
+						zoomOffset_H *=2;
+					break;
+				}
+			}
+			
+			function onMove(_offset)
+			{
+				switch(_offset)
+				{
+					case MOVE2UP:
+						moveOffset_V -= 10;
+					break;
+					
+					case MOVE2DOWN:
+						moveOffset_V += 10;
+					break;
+					
+					case MOVE2RIGHT:
+						
+						if(zoomOffset_H != 1)
+							moveOffset_H +=10;
+					break;
+					
+					case MOVE2LEFT:
+						if(zoomOffset_H != 1 && moveLimit-(moveLimit/zoomOffset_H) > moveOffset_H )
+							moveOffset_H -=10;
+					break;
+				}
+			}
+			
+			function updateMinMax()
+			{
+				setTimeout(function(){
+				console.log('min:'+min);	
+				console.log('min:'+max);
+				document.getElementById("minvalue").innerHTML = min;
+				document.getElementById("maxvalue").innerHTML = max;
+				if(clickedStop == 0)
+					updateMinMax();   
+				}, 1000);
+				//min = 0;
+				//max = 0;
+			}
+			function onStartClick()
+			{
+				clickedStop = 0;
+				if(document.getElementById("mode").value == 2)
+				{
+					moveLimit = 512;
+					isFFT = 1;
+				}
+				else 
+				{
+					moveLimit = 1024;
+					isFFT = 0;
+				}	
+				updateMinMax();
+				
+				websocket.send('start;channel='+document.getElementById("channel").value+';mode='+document.getElementById("mode").value);	
+				document.getElementById("do_connect").disabled = true;
+				document.getElementById("start").disabled = true;
+				document.getElementById("stop").disabled = false;
+				
+				
+
+			}
+			
+			function onStopClick()
+			{
+				clickedStop = 1;
+				
+				if(recvBufArray.length > 0)
+				{
+					recvBufArray.splice(0, recvBufArray.length);
+				}
+				
+				document.getElementById("do_connect").disabled = true;
+				document.getElementById("start").disabled = false;
+				document.getElementById("stop").disabled = true;
+				alert(document.getElementById("channel").value);
+				websocket.send('stop');	
+			}
+            function connect() {
+			
+			document.getElementById("start").disabled = false;
+			document.getElementById("stop").disabled = true;
+			
+                window.WebSocket = window.WebSocket || window.MozWebSocket;
+				var serverIp = location.host.split(':');
+				
+				
+                 websocket = new WebSocket('ws://'+serverIp[0]+':9000', // <---- 요기 수정
+                    'dumb-increment-protocol');
+
+                websocket.onopen = function () {
+                    $('h1').css('color', 'green');
+                };
+
+                websocket.onerror = function () {
+                    $('h1').css('color', 'red');
+                };
+
+                websocket.onmessage = function (message) {
+                    //$('div').append($('<p>', { text: 'received'}));
+                    //console.log(message.data);
+                    //console.log(message.data);
+					var reader = new FileReader();
+					reader.onload = function() {
+					//$('div').append($('<p>', { text: 'loaded'}));
+				//arrayBuffer = this.result;
+				    // var array5 =  new Uint8Array(this.result);
+					  //for(var i=0;i<array5.length ;i++)
+					//$('div').append($('<p>', { text: array5[i]}));
+					if(recvBufArray.length > 0 && clickedStop == 1)
+					{
+						recvBufArray.splice(0, recvBufArray.length);
+					}
+					
+					if(clickedStop == 0)
+					{
+						if( isFFT == 0)
+							recvBufArray =recvBufArray.concat(Array.prototype.slice.call(new Uint8Array(this.result))); 
+						else
+							recvBufArray =recvBufArray.concat(Array.prototype.slice.call(new Float32Array(this.result))); 
+					}
+					document.getElementById("stop").value = recvBufArray.length;
+					//else
+					//recvBufArray =recvBufArray.concat(Array.prototype.slice.call(new Uint32Array(this.result))); 
+					};
+					
+					reader.readAsArrayBuffer(message.data);
+                };
+
+/*
+                $('button').click(function(e) {
+                    e.preventDefault();
+                    websocket.send($('input').val());
+                    $('input').val('');
+                });
+				*/
+            }
+        </script>
+    </head>
+    <body>
+        <h1>WebSockets test</h1>
+        <form>
+           
+			<h4>채널 선택 </h4>
+			<select name="channel" id="channel">
+    <option value=1>1</option>
+    <option value=2>2</option>
+    <option value=3>3</option>
+    <option value=4>4</option>
+</select>
+			<h4>모드 선택 </h4>
+			<select name="mode" id="mode">
+    <option value=1>TIME</option>
+    <option value=2>FFT</option>
+    <option value=3>FIR</option>
+    <option value=4>RMS</option>
+</select>
+<div>
+			<input id="do_connect" type="button" onclick="connect()" value="Connect"/>
+            <input id="start" type="button" onclick="onStartClick()" value="Start" disabled="true"/>
+			<input id="stop" type="button" onclick="onStopClick()" value="Stop" disabled="true"/>
+			<input id="zoominy" type="button" onclick="onZoom(ZOOMOUT_V)" value="Zoom-Out AxisY"/>
+			<input id="zoomouty" type="button" onclick="onZoom(ZOOMIN_V)" value="Zoom-In AxisY"/>
+			<input id="zoominx" type="button" onclick="onZoom(ZOOMIN_H)" value="Zoom-Out AxisX"/>
+			<input id="zoomoutx" type="button" onclick="onZoom(ZOOMOUT_H)" value="Zoom-In AxisX"/>
+			<input id="moveup" type="button" onclick="onMove(MOVE2UP)" value="Move to Up"/>
+			<input id="movedown" type="button" onclick="onMove(MOVE2DOWN)" value="Move to Down"/>
+			<input id="moveright" type="button" onclick="onMove(MOVE2RIGHT)" value="Move to Right"/>
+			<input id="moveleft" type="button" onclick="onMove(MOVE2LEFT)" value="Move to Left"/>
+			<input id="reset" type="button" onclick="onReset()" value="Reset"/>
+			<span >Min</span >
+			<span  id="minvalue" style="display:inline-block; width:100px;text-align:center">0</span >
+			<span >Max</span >
+			<span  id="maxvalue" style="display:inline-block; width:100px;text-align:center">0</span >
+			</div>
+        </form>
+        <div>  	<canvas id="mycanvas" width=1024 height=600></canvas>
+</div>
+		<script src="processing.js"></script>
+	<script type="text/processing" data-processing-target="mycanvas">
+	
+	int Xmax = 1024;
+	int Ymax = 600;
+	int textOffset = 100;
+	int Yref = Ymax/2;
+	int q = 256;
+	int[] textYpos = {50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550};
+	int[] textYvalue = {250, 200, 150, 100, 50, 0, -50, -100, -150, -200, -250};
+	int textArrayLength = 11;
+	
+	void setup()
+	{	
+	  int i; 
+	int index = 0;
+	byte lower = 0;
+	char upper=0;
+	int bufSize = 0;
+	  frameRate(50);
+	  size(Xmax+textOffset,Ymax);
+	  background(125);
+	 // fill(255);
+	  //noLoop();
+	 // PFont fontA = loadFont("courier");
+	 // textFont(fontA, 14);  
+	}
+
+	void draw(){  
+	int j = 0;
+	char pointX1 = 0;
+	char pointX2 = 0;
+	int pointX3 = 0;
+	int pointX4 = 0;
+	int tempindex = 0;
+	int criterionLength = 0;
+	int befferingLimitLength = 0;
+	int xArixIndex = 0;
+	int frameRateValue = 0;
+	int limitValue = 0;
+	
+	upper = 0;
+	
+	
+	
+	if(isFFT == 0)
+	{
+		limitValue = 2046;
+		criterionLength = Xmax*2;
+		befferingLimitLength = criterionLength*100;
+		frameRateValue = 50;
+	}
+	else
+	{
+		limitValue = 1022;
+		criterionLength = Xmax/2;
+		befferingLimitLength = criterionLength*9;
+		frameRateValue = 3;
+	}	
+	//if(clickedStop == 1)
+		frameRate(frameRateValue);
+		
+	//println("frameRateTest "+frameRateTest);
+	 //println("recvBufArray size :"+recvBufArray.length);
+	if(clickedStop == 0)
+	{
+		if(recvBufArray != null )
+		{
+			 if(recvBufArray.length> criterionLength)
+			 {
+				if(recvBufArray.length > befferingLimitLength)
+					recvBufArray = recvBufArray.splice(recvBufArray.length - criterionLength*frameRateValue, frameRateValue*criterionLength);
+				
+				tempbuf	  = recvBufArray.splice(0, criterionLength);
+					
+				background(125);
+				stroke(30);
+
+				line(textOffset,300,Xmax+textOffset,300);	
+				line(textOffset-1,0,textOffset-1,600);
+				stroke(200);
+				for(int i = 0; i< textArrayLength;i++)
+				{
+					if(i != 5)
+					{
+						for(int k = 0; k< 1024; k=k+10)
+							point(textOffset+k,textYpos[i]);
+					}
+				}
+				
+				for(int i = 128; i< 1024;i=i+128)
+				{
+					for(int k = 0; k< 600; k=k+10)
+							point(textOffset+i,k);
+				}
+				stroke(255);
+				
+				
+				index = 0;
+				
+				
+				for(int i = 0; i< textArrayLength;i++)
+					text(textYvalue[i]*100/zoomOffset_V, 40, textYpos[i]);
+				while(index < limitValue  )
+				{
+				
+					if(isFFT == 0)
+					{
+						lower = (parseInt(tempbuf[index]));
+						upper = byte(parseInt(tempbuf[index+1]))*256;
+
+						upper += lower;
+						pointX1= upper;
+
+						lower = (parseInt(tempbuf[index+2]));
+						upper = byte(parseInt(tempbuf[index+3]))*256;
+
+						upper += lower;
+						pointX2= upper;
+						min = pointX1.toString();
+						
+						max = pointX2.toString();
+						//if(max < pointX1)
+						//	max = pointX1;
+						//if(min > pointX1)
+						//	min = pointX1;
+						line(j+moveOffset_H+textOffset,pointX1*zoomOffset_V/100+300+moveOffset_V,j+zoomOffset_H+moveOffset_H+textOffset,pointX2*zoomOffset_V/100+300+moveOffset_V);
+						j = j+zoomOffset_H;
+						index +=2;
+					}
+					else
+					{
+						min = pointX1.toString();
+						max = pointX2.toString();
+						
+						line(j+moveOffset_H+textOffset,300 - tempbuf[index]*zoomOffset_V/100+moveOffset_V,j+zoomOffset_H*2+moveOffset_H+textOffset,300 - tempbuf[index+1]*zoomOffset_V/100+moveOffset_V);
+						//println("index "+index+" j:"+j);
+						index+=1;
+						j+=2*zoomOffset_H;					
+					}
+					//println(pointX1+'   '+pointX2);
+					//println("recvBufArray size :"+recvBufArray.length);
+				}
+			  }
+		}
+		else
+		{
+			background(125);
+					stroke(255);
+		 //println("recvBufArray is null");
+		 }
+	}
+	//if(i > 0)
+	//println("testdata"+list.get(i-1));
+	
+	}
+	</script>
+    </body>
+</html>

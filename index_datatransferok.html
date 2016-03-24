@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Socket.IO chat</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font: 13px Helvetica, Arial; }
+      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+      form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
+      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+      #messages { list-style-type: none; margin: 0; padding: 0; }
+      #messages li { padding: 5px 10px; }
+      #messages li:nth-child(odd) { background: #eee; }
+    </style>
+  </head>
+  <body>
+  	<canvas id="mycanvas"></canvas>
+    <ul id="messages"></ul>
+    <form action="">
+      <input id="m" autocomplete="off" /><button>Send</button>
+    </form>
+	<script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
+	<script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+	<script>
+		var value=0;
+		var data=[];
+	  var socket = io();
+	  $('form').submit(function(){
+		socket.emit('chat message', $('#m').val());
+		$('#m').val('');
+		return false;
+	  });
+	  socket.on('chat message', function(msg){
+		//$('#messages').append($('<li>').text(msg));
+		value=msg;
+		//console.log(msg);
+	  });
+	</script>
+	<script src="processing.js"></script>
+	<script type="text/processing" data-processing-target="mycanvas">
+	
+	int Xmax = 500;
+	int Ymax = 200;
+	int Yref = Ymax/2;
+	
+	void setup()
+	{
+	
+	  size(Xmax,Ymax);
+	  background(125);
+	  fill(255);
+	  //noLoop();
+	  PFont fontA = loadFont("courier");
+	  textFont(fontA, 14);  
+	}
+
+	void draw(){  
+		/*
+	  text("Hello Web!",20,20);
+	  println("Hello ErrorLog!");
+	  */
+	  int i;
+	  background(125);
+	  stroke(255);
+	  
+	  for(i=0;i<500;i++){
+		line(i,value[i]+Yref,(i+1),value[i+1]+Yref);
+		//console.log(value[i-1]+' '+value[i]);
+		}
+		
+	  //println(value);
+	  console.log("aaaaaaaa" + value);
+	}
+	</script>
+
+  </body>
+</html>
